@@ -25,6 +25,7 @@
             buildInputs = [
               rust-bin.stable.latest.default
               clang
+	      cmake
             ];
           };
         }
