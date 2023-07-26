@@ -18,7 +18,7 @@
           pkgs = import nixpkgs {
             inherit system overlays;
           };
-          frameworks = pkgs.darwin.apple_sdk.frameworks;
+          # frameworks = pkgs.darwin.apple_sdk.frameworks;
         in
         with pkgs;
         {
@@ -28,8 +28,10 @@
               clang
               cmake
               ffmpeg
-              #youtube-dl
-              frameworks.Security
+	      openssl
+	      pkg-config
+	      libopus
+              # frameworks.Security
             ];
           };
         }
