@@ -1,51 +1,93 @@
-use std::env;
+mod commands;
 
-// serenity junk
-use serenity::async_trait;
-use serenity::framework::standard::Args;
-use serenity::prelude::*;
-use serenity::model::channel::Message;
-use serenity::framework::standard::macros::{command, group};
-use serenity::framework::standard::{StandardFramework, CommandResult};
+use std::env;
+use dotenv::dotenv;
+
+// serenity direct imports
+// use serenity::async_trait;
+// use serenity::client::ClientBuilder;
+// use serenity::framework::standard::Args;
+// use serenity::prelude::*;
+// use serenity::model::channel::Message;
+// use serenity::framework::standard::macros::{command, group};
+// use serenity::framework::standard::{StandardFramework, CommandResult};
+use poise::serenity_prelude::{self as serenity, Mentionable as _, builder::*};
+
+use log::{debug,info};
 
 
 // songbird
 use songbird::SerenityInit;
 
-
+// web requests
 use reqwest;
 use rand;
 
-#[group]
-#[commands(ping, pong, join, leave, play, xkcd)] // stop
-struct General;
+//#[group]
+//#[commands(ping, pong, join, leave, play, xkcd)] // stop
+//struct General;
 
-struct Handler;
+//struct Handler;
 
-#[async_trait]
-impl EventHandler for Handler {}
+//#[async_trait]
+//impl EventHandler for Handler {}
+struct Data {}
+type Error = Box<dyn std::error::Error + Send + Sync>;
+type Context<'a> = poise::Context<'a, Data, Error>;
+
+
+#[poise::command(slash_command, prefix_command)]
+pub async fn ping(
+    ctx: Context<'_>,
+    #[description = "Selected user"] user: Option<serenity::User>,
+) -> Result<(), Error> {
+    let u = user.as_ref().unwrap_or_else(|| ctx.author());
+    let response = format!("{}'s account was created at {}", u.name, u.created_at());
+    ctx.say(response).await?;
+    Ok(())
+}
 
 #[tokio::main]
 async fn main() {
-    let framework = StandardFramework::new()
-        .configure(|c| c.prefix("~")) // set the bot's prefix to "~"
-        .group(&GENERAL_GROUP);
+    dotenv().ok();
+
+
+    // configure poise
+    let framework_options = poise::FrameworkOptions {
+        prefix_options: poise::PrefixFrameworkOptions {
+            prefix: Some("~".into()),
+            edit_tracker: Some(poise::EditTracker::for_timespan(std::time::Duration::from_secs(3600))),
+            case_insensitive_commands: true,
+            ..Default::default()
+        },
+        commands: vec![ping()],
+        ..poise::FrameworkOptions::default()
+    };
 
     // Login with a bot token from the environment
     let token = env::var("DISCORD_TOKEN").expect("token");
-    let intents = GatewayIntents::non_privileged() | GatewayIntents::MESSAGE_CONTENT;
-    let mut client = Client::builder(token, intents)
-        .event_handler(Handler)
-        .framework(framework)
-        .register_songbird()
+    let intents = serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT;
+    let songbird = songbird::Songbird::serenity();
+    let data = {};
+
+    let mut client = serenity::Client::builder(token, intents)
+        .voice_manager_arc(songbird)
+        .framework(poise::Framework::new(
+            framework_options,
+            |_, _, _| Box::pin(async {Ok(data)})
+        ))
         .await
-        .expect("Error creating client");
+        .expect("Client Built");
 
     // start listening for events by starting a single shard
     if let Err(why) = client.start().await {
         println!("An error occurred while running the client: {:?}", why);
     }
 }
+
+/*
+
+
 
 #[command]
 async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
@@ -74,10 +116,7 @@ async fn join(ctx: &Context, msg: &Message) -> CommandResult {
         Some(channel) => channel,
         None => {
             msg.reply(ctx, "Not in a voice channel").await?;
-            return Ok(());
-        }
-    };
-
+            return Ok(()); } };
     let manager = songbird::get(ctx)
         .await
         .expect("Retrieve Songbird client.")
@@ -200,3 +239,5 @@ fn check_msg(result: serenity::Result<Message>) {
         println!("Error sending message: {:?}", why);
     }
 }
+
+*/
