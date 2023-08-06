@@ -95,6 +95,58 @@ async fn play(
     Ok(())
 }
 
-pub fn commands() -> [Command; 3] {
-    [join(), leave(), play()]
+#[poise::command(slash_command, prefix_command)]
+async fn stop(
+    ctx: Context<'_>,
+    ) -> Result<(), Error>{
+
+
+    let guild = ctx.guild().unwrap();
+    let guild_id = guild.id;
+
+    let manager = songbird::get(ctx.serenity_context()).await
+        .expect("Songbird Voice client placed in at initialisation.").clone();
+
+
+    if let Some(handler_lock) = manager.get(guild_id) {
+        let mut handler = handler_lock.lock().await;
+
+        handler.stop();
+        
+        ctx.say("Stopped player").await?;
+    } else {
+        ctx.say("Not in a voice channel").await?;
+    }
+
+    Ok(())
+}
+
+#[poise::command(slash_command, prefix_command)]
+async fn skip(
+    ctx: Context<'_>,
+    ) -> Result<(), Error>{
+
+
+    let guild = ctx.guild().unwrap();
+    let guild_id = guild.id;
+
+    let manager = songbird::get(ctx.serenity_context()).await
+        .expect("Songbird Voice client placed in at initialisation.").clone();
+
+
+    if let Some(handler_lock) = manager.get(guild_id) {
+        let handler = handler_lock.lock().await;
+
+        handler.queue().skip()?;
+        
+        ctx.say("skipped song").await?;
+    } else {
+        ctx.say("Not in a voice channel").await?;
+    }
+
+    Ok(())
+}
+
+pub fn commands() -> [Command; 5] {
+    [join(), leave(), play(), stop(), skip()]
 }
