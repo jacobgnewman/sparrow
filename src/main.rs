@@ -6,14 +6,8 @@ use crate::structs::Data;
 use dotenv::dotenv;
 use std::env;
 
-// use poise::serenity_prelude::{self as serenity, Mentionable as _, builder::*};
 use poise::serenity_prelude as serenity;
-
-use log::{debug, info};
-
-// songbird
 use songbird::SerenityInit;
-
 
 #[tokio::main]
 async fn main() {
@@ -36,7 +30,7 @@ async fn main() {
     };
 
     let data = Data {
-        songbird: songbird::Songbird::serenity()
+        songbird: songbird::Songbird::serenity(),
     };
 
     let intents =
